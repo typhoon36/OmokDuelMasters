@@ -9,6 +9,7 @@ namespace Manager.Network
     /// <summary>
     /// [D4] 매칭 상태 동기화 관리 스크립트
     /// </summary>
+    [RequireComponent(typeof(PhotonView))]
     public class GameMatchingPanelManager : MonoBehaviourPunCallbacks
     {
         [Header("UI References")]
@@ -19,7 +20,8 @@ namespace Manager.Network
         [Header("Settings")]
         [SerializeField] private byte maxPlayers = 2;
 
-        private bool isGameStarted = false; // 게임 시작 중복 방지용 플래그
+        private bool isStartRequested = false; // 마스터 클라이언트에서 게임 시작 요청 중복 방지
+        private bool isGameStarted = false; // 실제 게임 시작 중복 방지용 플래그
 
         private void Start()
         {
@@ -43,6 +45,7 @@ namespace Manager.Network
             Debug.Log($"[GameMatching] 플레이어 퇴장: {otherPlayer.NickName}");
             
             // 플레이어가 나가면 게임 시작 상태 초기화 및 딜레이 실행 취소
+            isStartRequested = false;
             isGameStarted = false;
             CancelInvoke(nameof(StartGame));
 
@@ -104,9 +107,9 @@ namespace Manager.Network
         {
             if (PhotonNetwork.CurrentRoom.PlayerCount == maxPlayers)
             {
-                if (PhotonNetwork.IsMasterClient && !isGameStarted)
+                if (PhotonNetwork.IsMasterClient && !isStartRequested)
                 {
-                    isGameStarted = true;
+                    isStartRequested = true;
                     Debug.Log("[GameMatching] 1초 후 게임을 시작합니다.");
                     Invoke(nameof(StartGame), 1f);
                 }
@@ -114,11 +117,27 @@ namespace Manager.Network
         }
 
         /// <summary>
-        /// 실제 게임 시작 실행 (씬 이동 없이 로그 출력)
+        /// 실제 게임 시작 실행 (RPC 호출)
         /// </summary>
         private void StartGame()
         {
-            Debug.Log("[GameMatching] 게임 시작!");
+            if (photonView != null)
+            {
+                photonView.RPC(nameof(RPC_StartGame), RpcTarget.All);
+            }
+        }
+
+        [PunRPC]
+        private void RPC_StartGame()
+        {
+            if (isGameStarted) return;
+            isGameStarted = true;
+
+            Debug.Log("[GameMatching] 게임 시작! (모든 클라이언트 동기화)");
+            if (matchingPanel != null)
+            {
+                matchingPanel.SetActive(false);
+            }
         }
     }
 }

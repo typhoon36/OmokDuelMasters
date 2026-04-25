@@ -13,7 +13,8 @@ public class PhotonManager : MonoBehaviourPunCallbacks
 {
     [Header("Photon Settings")]
     [SerializeField] private string gameVersion = "0.1";
-    [SerializeField] private string nickName = "TestPlayer";
+    [SerializeField] private string nickName = "";
+    [SerializeField] private bool useRandomNickname = true;
     [SerializeField] private bool connectOnStart = true;
     [SerializeField] private bool autoJoinLobbyOnConnected = true;
 
@@ -56,14 +57,36 @@ public class PhotonManager : MonoBehaviourPunCallbacks
         isConnecting = true;
 
         PhotonNetwork.GameVersion = gameVersion;
-        PhotonNetwork.NickName = string.IsNullOrWhiteSpace(nickName)
-            ? $"Player_{Random.Range(1000, 9999)}"
-            : nickName;
+        PhotonNetwork.NickName = useRandomNickname
+            ? GenerateNickname()
+            : GetCustomNicknameOrFallback();
 
         PhotonNetwork.AutomaticallySyncScene = true;
 
         Debug.Log($"[SCRUM-26] Photon 연결 시작 | NickName: {PhotonNetwork.NickName}");
         PhotonNetwork.ConnectUsingSettings();
+    }
+
+    /// <summary>
+    /// Player + 넘버 형식의 닉네임 생성
+    /// 예: Player1234
+    /// </summary>
+    private string GenerateNickname()
+    {
+        return $"Player{Random.Range(1000, 9999)}";
+    }
+
+    /// <summary>
+    /// 커스텀 닉네임이 비어 있으면 랜덤 닉네임 사용
+    /// </summary>
+    private string GetCustomNicknameOrFallback()
+    {
+        if (string.IsNullOrWhiteSpace(nickName))
+        {
+            return GenerateNickname();
+        }
+
+        return nickName;
     }
 
     /// <summary>

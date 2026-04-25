@@ -11,7 +11,7 @@ namespace Manager.Network
     {
         [Header("Room Settings")]
         [SerializeField] private byte maxPlayers = 2;
-        [SerializeField] private string gameSceneName = "GameScene";
+        [SerializeField] private string MultigameSceneName = "Game_Multiplayer";
 
         [Header("UI References")]
         [SerializeField] private Button onlineMatchBtn;
@@ -110,7 +110,7 @@ namespace Manager.Network
         {
             Debug.Log($"[SCRUM-28] 방 참가 성공: {PhotonNetwork.CurrentRoom.Name}");
             // 방에 입장하자마자 GameScene으로 즉시 이동 (혼자라도 이동)
-            PhotonNetwork.LoadLevel(gameSceneName);
+            PhotonNetwork.LoadLevel(MultigameSceneName);
         }
 
         public override void OnJoinRandomFailed(short returnCode, string message)

@@ -9,18 +9,17 @@ public class BoardManager : MonoBehaviour
     [Header("Stone Prefabs")]
     public GameObject blackStonePrefab;
     public GameObject whiteStonePrefab;
-    public GameObject forbiddenMarkPrefab; // 렌주룰 착수 금지점을 나타낼 X 마크 프리팹
+    public GameObject forbiddenMarkPrefab; 
 
     [Header("Board Visual Settings")]
     public float gridSizeX = 0.05f; 
     public float gridSizeZ = 0.05f; 
     public Vector3 boardOrigin = new Vector3(-0.35f, 0, -0.35f);
-    public Vector3 boardRotation = Vector3.zero; // 바둑판 전체 회전값
+    public Vector3 boardRotation = Vector3.zero; 
     public float spawnHeight = 0.5f;
 
     [Header("Stone Rotation Settings")]
-    [Tooltip("돌을 생성할 때 추가로 회전시킬 각도입니다. (기본 X축 90도)")]
-    public Vector3 stoneRotationOffset = new Vector3(90f, 0f, 0f); // ★ 추가: 프리팹 개별 회전 오프셋
+    public Vector3 stoneRotationOffset = new Vector3(90f, 0f, 0f); 
 
     [Header("Preview Settings")]
     [Range(0f, 1f)]
@@ -28,7 +27,6 @@ public class BoardManager : MonoBehaviour
     private GameObject previewBlack;
     private GameObject previewWhite;
 
-    // 생성된 금지 마크들을 담아둘 리스트
     private List<GameObject> activeForbiddenMarks = new List<GameObject>();
        
     private void Start()
@@ -42,6 +40,8 @@ public class BoardManager : MonoBehaviour
         if (gameManager != null)
         {
             gameManager.OnTurnChanged += UpdateForbiddenMarks;
+            // ★ 새로 만든 돌 배치 이벤트를 구독합니다.
+            gameManager.OnStonePlaced += SpawnStoneVisual;
         }
     }
 
@@ -50,6 +50,8 @@ public class BoardManager : MonoBehaviour
         if (gameManager != null)
         {
             gameManager.OnTurnChanged -= UpdateForbiddenMarks;
+            // ★ 이벤트 해제
+            gameManager.OnStonePlaced -= SpawnStoneVisual;
         }
     }
 
@@ -69,18 +71,12 @@ public class BoardManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 배열 인덱스(x, y)를 바둑판의 회전값이 적용된 실제 3D 월드 좌표로 변환합니다.
-    /// </summary>
     private Vector3 GetWorldPosition(int x, int y, float localHeightOffset = 0f)
     {
         Vector3 localPos = new Vector3(x * gridSizeX, localHeightOffset, y * gridSizeZ);
         return boardOrigin + Quaternion.Euler(boardRotation) * localPos;
     }
 
-    /// <summary>
-    /// 실제 3D 월드 좌표를 바둑판의 회전값을 역연산하여 배열 인덱스(x, y)로 반환합니다.
-    /// </summary>
     private Vector2Int GetGridIndex(Vector3 worldPosition)
     {
         Vector3 diff = worldPosition - boardOrigin;
@@ -92,9 +88,6 @@ public class BoardManager : MonoBehaviour
         return new Vector2Int(x, z);
     }
 
-    /// <summary>
-    /// 마우스를 클릭할 가상의 평면(Plane)을 반환합니다. 
-    /// </summary>
     private Plane GetBoardPlane()
     {
         Vector3 planeNormal = Quaternion.Euler(boardRotation) * Vector3.up;
@@ -178,7 +171,7 @@ public class BoardManager : MonoBehaviour
             {
                 GameManager.Player currentPlayer = gameManager.currentPlayer;
 
-                if (gameManager.IsForbidden(x, y, currentPlayer))
+                if (currentPlayer != gameManager.localPlayer || gameManager.IsForbidden(x, y, currentPlayer))
                 {
                     HidePreviews();
                     return;
@@ -194,8 +187,6 @@ public class BoardManager : MonoBehaviour
                 if (activePreview != null)
                 {
                     activePreview.transform.position = GetWorldPosition(x, y, 0f);
-                    
-                    // ★ 보드 회전값에 돌 전용 오프셋 각도(X:90)를 더해서 적용
                     activePreview.transform.rotation = Quaternion.Euler(boardRotation) * Quaternion.Euler(stoneRotationOffset);
                 }
                 return; 
@@ -224,14 +215,7 @@ public class BoardManager : MonoBehaviour
             int x = gridIndex.x;
             int y = gridIndex.y;
 
-            GameManager.Player currentPlayer = gameManager.currentPlayer;
-            bool isPlaced = gameManager.PlaceStone(x, y);
-
-            if (isPlaced)
-            {
-                SpawnStoneVisual(x, y, currentPlayer);
-                HidePreviews();
-            }
+            gameManager.PlaceStone(x, y, gameManager.localPlayer); 
         }
     }
 
@@ -243,10 +227,11 @@ public class BoardManager : MonoBehaviour
 
         if (prefabToSpawn != null)
         {
-            // ★ 생성 시 보드 회전값에 돌 전용 각도 오프셋 적용
             Quaternion finalRotation = Quaternion.Euler(boardRotation) * Quaternion.Euler(stoneRotationOffset);
             Instantiate(prefabToSpawn, spawnPos, finalRotation, this.transform);
         }
+        
+        HidePreviews();
     }
 
     private void OnDrawGizmos()

@@ -9,11 +9,11 @@ EditorBuildSettings:
     path: Assets/Scenes/Title.unity
     guid: 83d75a4a39609d04a8d9448d2f0b2b58
   - enabled: 1
-    path: Assets/Scenes/Game_Multiplayer.unity
-    guid: bf33e5a769c00964ea4f643d6f8b2325
-  - enabled: 1
-    path: Assets/Scenes/Game_AI.unity
+    path: Assets/Scenes/Game_Single.unity
     guid: b6e7ff40e67757c459cfc85504f3df68
+  - enabled: 1
+    path: Assets/Scenes/Game_Multiplayer.unity
+    guid: 31d0827fb7fe85f4d8c3f91962695a73
   - enabled: 1
     path: Assets/Scenes/Result.unity
     guid: a1154c829b340fc4c9e9e82a3cf5883d

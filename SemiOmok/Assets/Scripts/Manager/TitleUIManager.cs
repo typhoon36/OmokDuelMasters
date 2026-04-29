@@ -5,8 +5,8 @@
  * 3. 클릭 영역 확보: 투명 이미지가 없는 오브젝트도 클릭 가능하도록 자동 보정 기능 추가
  */
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.EventSystems; // UI 이벤트 시스템 사용을 위해 추가
+using UnityEngine.UI;
 
 public class TitleUIManager : MonoBehaviour
 {
@@ -26,24 +26,39 @@ public class TitleUIManager : MonoBehaviour
 
     [Header("Custom Cursor Settings")]
     [Tooltip("마우스 커서를 대신할 프리팹(Prefab)을 넣으세요. (UI Image 권장)")]
-    public GameObject customCursorPrefab; 
-    
+    public GameObject customCursorPrefab;
+
     [Tooltip("커서가 생성될 캔버스(또는 패널)를 연결해 주세요.")]
-    public RectTransform canvasTransform; 
-    
+    public RectTransform canvasTransform;
+
     public bool hideDefaultCursor = true;
-    
+
     public Vector3 cursorOffset = Vector3.zero;
     public Vector3 cursorScale = Vector3.one;
     public Vector3 cursorRotation = Vector3.zero;
 
     private Camera mainCam;
-    private RectTransform actualCursor; 
+    private RectTransform actualCursor;
     private Canvas parentCanvas;
 
     private void Start()
     {
         mainCam = Camera.main;
+
+        // [NET][FIX] 타이틀 진입 시 포톤 연결 상태를 확인하고 최적의 상태(로비 진입)로 만듭니다.
+        if (PhotonManager.Instance != null)
+        {
+            if (Photon.Pun.PhotonNetwork.IsConnected == false)
+            {
+                Debug.Log("[TitleUI] Photon is not connected. Attempting to connect...");
+                PhotonManager.Instance.ConnectToPhoton();
+            }
+            else if (Photon.Pun.PhotonNetwork.InLobby == false && Photon.Pun.PhotonNetwork.InRoom == false)
+            {
+                Debug.Log("[TitleUI] Connected to Master but not in Lobby. Joining Lobby...");
+                PhotonManager.Instance.JoinLobby();
+            }
+        }
 
         // 기본 커서 숨기기 옵션
         if (hideDefaultCursor)
@@ -56,7 +71,7 @@ public class TitleUIManager : MonoBehaviour
         {
             GameObject spawnedCursor = Instantiate(customCursorPrefab, canvasTransform);
             actualCursor = spawnedCursor.GetComponent<RectTransform>();
-            
+
             // 프리팹 앵커를 정중앙으로 초기화하여 계산 오류 방지
             actualCursor.anchorMin = new Vector2(0.5f, 0.5f);
             actualCursor.anchorMax = new Vector2(0.5f, 0.5f);

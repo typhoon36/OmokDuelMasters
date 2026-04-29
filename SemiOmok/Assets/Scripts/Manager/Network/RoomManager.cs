@@ -74,6 +74,11 @@ namespace Manager.Network
                 {
                     PhotonManager.Instance?.ConnectToPhoton();
                 }
+                else if (PhotonNetwork.IsConnectedAndReady)
+                {
+                    // [NET][FIX] 연결은 되어있으나 로비가 아닌 경우 로비 진입 시도
+                    PhotonNetwork.JoinLobby();
+                }
                 return;
             }
 

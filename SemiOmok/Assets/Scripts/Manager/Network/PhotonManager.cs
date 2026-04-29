@@ -42,9 +42,15 @@ public class PhotonManager : MonoBehaviourPunCallbacks
     /// </summary>
     public void ConnectToPhoton()
     {
-        if (PhotonNetwork.IsConnected || isConnecting)
+        if (PhotonNetwork.IsConnected)
         {
-            Debug.Log("[SCRUM-26] 이미 연결되어 있거나 연결 진행 중입니다.");
+            Debug.Log("[SCRUM-26] 이미 포톤 서버에 연결되어 있습니다.");
+            return;
+        }
+
+        if (isConnecting)
+        {
+            Debug.Log("[SCRUM-26] 현재 포톤 연결이 진행 중입니다...");
             return;
         }
 
@@ -65,8 +71,13 @@ public class PhotonManager : MonoBehaviourPunCallbacks
 
         PhotonNetwork.AutomaticallySyncScene = true;
 
-        Debug.Log($"[SCRUM-26] Photon 연결 시작 | NickName: {PhotonNetwork.NickName}");
-        PhotonNetwork.ConnectUsingSettings();
+        Debug.Log($"[SCRUM-26] Photon 연결 시작 | NickName: {PhotonNetwork.NickName} | Version: {gameVersion}");
+
+        if (!PhotonNetwork.ConnectUsingSettings())
+        {
+            Debug.LogError("[SCRUM-26] Photon 연결 시도 실패: ConnectUsingSettings가 false를 반환했습니다.");
+            isConnecting = false;
+        }
     }
 
     /// <summary>
@@ -76,19 +87,19 @@ public class PhotonManager : MonoBehaviourPunCallbacks
     {
         if (!PhotonNetwork.IsConnectedAndReady)
         {
-            Debug.LogWarning("[SCRUM-27] 아직 Master Server 연결 준비가 되지 않았습니다.");
+            Debug.LogWarning("[SCRUM-27] 아직 Master Server 연결 준비가 되지 않았습니다. (State: " + PhotonNetwork.NetworkClientState + ")");
             return;
         }
 
         if (PhotonNetwork.InLobby || isJoiningLobby)
         {
-            Debug.Log("[SCRUM-27] 이미 로비에 있거나 로비 입장 진행 중입니다.");
+            Debug.Log("[SCRUM-27] 이미 로비에 있거나 로비 입장 진행 중입니다. (InLobby: " + PhotonNetwork.InLobby + ", isJoiningLobby: " + isJoiningLobby + ")");
             return;
         }
 
         isJoiningLobby = true;
 
-        Debug.Log("[SCRUM-27] 로비 입장 시도");
+        Debug.Log("[SCRUM-27] 로비 입장 시도...");
         PhotonNetwork.JoinLobby();
     }
 
